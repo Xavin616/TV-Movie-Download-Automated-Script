@@ -1,63 +1,45 @@
+#!/usr/bin/env python
+from driver import driver, By, Keys
+from driver import args
 from time import sleep
-from typing import List
-from webbrowser import open as wb
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.keys import Keys
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.chrome.options import Options
+import sys
 
-s = Service(ChromeDriverManager().install())
-options = Options()
-#options.add_argument('--headless')
-#options.add_argument('--no-sandbox')
-#options.add_argument('--disable-dev-shm-usage')
-driver = webdriver.Chrome(service=s, options=options)
-params = {'behavior': 'allow', 'downloadPath': r'/home/xavin616/Videos'}
-driver.execute_cdp_cmd('Page.setDownloadBehavior', params)
 
-#url = f"https://nkiri.com/while-you-were-sleeping-korean-drama/"
+series_name = args.series
+episodes = args.episodes
+classic = args.classic
+timeout = args.timeout
 
-def search(query):
+def series(query, start, stop, timeout, classic):
     driver.get(f"https://nkiri.com/?s={query}")
-    found = driver.find_element_by_xpath('//h2[@class="search-entry-title entry-title"]//a')
-    #found
+    sleep(3)
+    xs = start
+    found = driver.find_element(By.XPATH, "(//h2[@class='search-entry-title entry-title'])[1]/a")
     found.send_keys(Keys.ENTER)
-    print(found.text)
+    slist = driver.find_elements(By.XPATH, "//a[@role='button']")
+    links = [a.get_attribute('href') for a in slist]
+    for view in links[(start+1):(stop+2)]:
+        # driver.eviewecute_script("window.open('');")
+        # driver.switch_to.window(driver.window_handles[1])
+        if classic:
+            # print('Loading Legacy Download Program')
+            driver.get(view)
+            continue
+        else:
+            print(f"Downloading Episode: {xs}")
+            driver.get(view)
+            k = driver.find_element(By.XPATH, "//button[@id='downloadbtn']")
+            driver.execute_script("arguments[0].click();", k)
+            xs+=1
+            continue
+    sleep(timeout)
+        # driver.close()
+        # driver.switch_to.window(driver.window_handles[0])
 
-def series(query, episode):
-    driver.get(f"https://nkiri.com/?s={query}")
-    found = driver.find_element_by_xpath('//h2[@class="search-entry-title entry-title"]//a')
-    #found
-    found.send_keys(Keys.ENTER)
-    sleep(4)
-    list = driver.find_elements_by_xpath('//span[contains(text(), "Download Episode" )]')
-    num = len(list)
-    for i in range((episode-1), num):
-        sleep(2)
-        driver.execute_script("arguments[0].click();", list[i])
-        sleep(4)
-
-def movies(query):
-    driver.get(f"https://nkiri.com/?s={query}")
-    found = driver.find_element_by_xpath('//h2[@class="search-entry-title entry-title"]//a')
-    #found
-    found.send_keys(Keys.ENTER)
-    print(found.text)
-    sleep(4)
-    link = driver.find_element_by_xpath('//span[contains(text(), "Download Movie" )]')
-    sleep(2)
-    driver.execute_script("arguments[0].click();", link)
-    sleep(300)
 
 if __name__ == '__main__':
+    print('================================================')
     print("Nkiri Downloader is loading....")
-    search  = str(input("Name:\t"))
-    media = str(input("Media ('movie'/ 'tv'):\t"))
-    episode = int(input("If series, which episode should I start from (a number):\t"))
-
-    if 'movie' in media:
-        movies(search)
-    else:
-        series(search, episode)
-    
+    print(f"Series: {series_name.capitalize()}\nEpisodes: {episodes}")
+    print('================================================')
+    series(series_name, episodes[0], episodes[-1], timeout, classic)

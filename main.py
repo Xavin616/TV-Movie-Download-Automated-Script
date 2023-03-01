@@ -1,24 +1,8 @@
+#!/usr/bin/env python
+
+from driver import driver, By, Keys, Alert
+from driver import args
 from time import sleep
-from plyer import notification
-from typing import ChainMap
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.keys import Keys
-
-s = Service(ChromeDriverManager().install())
-options = Options()
-#options.add_argument('--headless')
-#options.add_argument('--no-sandbox')
-#options.add_argument('--disable-dev-shm-usage')
-options.add_argument('--disable-popup-blocking')
-#options.add_experimental_option("excludeSwitches", ["enable-automation"])
-driver = webdriver.Chrome(options=options, service=s)
-params = {'behavior': 'allow', 'downloadPath': r'/home/xavin616/Videos'}
-driver.execute_cdp_cmd('Page.setDownloadBehavior', params)
-
-url = f"https://mobiletvshows.net/subfolder-Arcane.htm"
 
 def notify():
     notification.notify(
@@ -26,25 +10,33 @@ def notify():
         message = 'Series has Downloaded, program has ended!',
         timeout = 5
     )
-    sleep(5)
+
+def main(url, start, stop,timeout):
+    driver.get(url)
+    Alert(driver).dismiss()
+    eplist = driver.find_elements(By.XPATH, '//small[contains(text(), "High MP4")]')
+    length = len(eplist)
+    end = (length if stop > length else stop)
+    print('================================================')
+    for i in range(start-1, end):
+        print("Downloading Episode: ", i+1)
+        driver.get(url)
+        xlist = driver.find_elements(By.XPATH, '//small[contains(text(), "High MP4")]')
+        item = xlist[i]
+        driver.execute_script("arguments[0].click();", item)
+        downlink = driver.find_element(By.ID, 'dlink1')
+        driver.execute_script("arguments[0].click();", downlink)
+        link1 = driver.find_element(By.ID, 'flink1')
+        driver.execute_script("arguments[0].click();", link1)
+        #sleep(10)
+    sleep(timeout)
 
 if __name__ == '__main__':
-    driver.get(url)
-    list = driver.find_elements_by_xpath('//small[contains(text(), "High MP4")]')
-    number = int(len(list))
-    for i in range(0, number):
-        driver.get(url)
-        list = driver.find_elements_by_xpath('//small[contains(text(), "High MP4")]')
-        item = list[i]
-        driver.execute_script("arguments[0].click();", item)
-        #sleep(5)
-        downlink = driver.find_element_by_id('dlink1')
-        driver.execute_script("arguments[0].click();", downlink)
-        sleep(5)
-        link1 = driver.find_element_by_id('flink1')
-        driver.execute_script("arguments[0].click();", link1)
-        sleep(5)
-    sleep(600)
-    driver.close()
-    print('Program has Ended')
-    notify()
+    url = args.url
+    start = args.episodes[0]
+    stop = args.episodes[-1]
+    time = args.timeout
+    print('================================================')
+    print(f'Url:{url}\nEpisodes: {start}-{stop}')
+    main(url, start, stop, time)
+    # notify()
